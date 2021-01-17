@@ -16,14 +16,13 @@ class Deck:
 
             numdecks -= 1
 
+        random.shuffle(self.deck)
         return self.deck
 
     def print_deck(self):
         print(self.deck)
 
     def gen_two_cards(self):
-        random.shuffle(self.deck)
-
         c1 = self.deck.pop()
         c2 = self.deck.pop()
         pc1 = self.deck.pop()
@@ -32,8 +31,6 @@ class Deck:
         return c1, c2, pc1, pc2
 
     def get_one_card(self):
-        random.shuffle(self.deck)
-
         ec = self.deck.pop()
 
         return ec
@@ -58,7 +55,7 @@ class Deck:
     def start_play(self, wclass, money):
         classdeck = Deck()
         classgamerandom = GameRandom()
-        classgamedif = GameDif()
+        classgagmedeal = GameDeal()
 
         if len(self.deck) <= 10:
             print("\nNot enought cards, the match is over\n")
@@ -85,34 +82,38 @@ class Deck:
         result_player = self.add_cards(c1, c2)
         result_comp = self.add_cards(pc1, pc2)
 
-        if wclass == 'r':
-            classgamerandom.rounds(result_player, result_comp, True, True, pc1, pc2, bet)
+        self.player_play(result_player, result_comp, True, True, pc1, pc2, bet, c1, c2, wclass, money)
 
-        elif wclass == 'd':
-            classgamedif.round()
 
-class GameRandom(Deck):
+    def player_play(self, result_player, result_comp, possible, possiblec, pc1, pc2, bet, c1, c2, wclass, money):
+        have_Aplayer = 0
+        if c1 == 'A':
+            have_Aplayer += 1
+        if c2 == 'A':
+            have_Aplayer += 1
 
-    money = 5000
-
-    def rounds(self, result_player, result_comp, possible, possiblec, pc1, pc2, bet):
-        
         while possible is True:
-            if result_player > 21:
+            if result_player > 21 and have_Aplayer == 0:
                 print(f'You lost! {result_comp} to {result_player}')
-                self.money -= bet
-                super().start_play('r', self.money)
+                money -= bet
+                self.start_play('r', money)
+            
+            elif result_player > 21 and have_Aplayer > 0:
+                result_player -= 10
+                have_Aplayer -= 1
 
             elif result_player == 21:
                 print('Blackjack, you win')
-                self.money = (self.money + bet) + (bet/2)
-                super().start_play('r', self.money)
+                money = (money + bet) + (bet/2)
+                self.start_play('r', money)
 
             morecard = str(input("\nDo you want another card? (y/n) "))
 
             if morecard.lower() == 'y':
-                tmp = super().get_one_card()
-                result_player = super().add_cards(result_player, tmp)
+                tmp = self.get_one_card()
+                if tmp  == 'A':
+                    have_Aplayer += 1
+                result_player = self.add_cards(result_player, tmp)
                 print(tmp)
                 time.sleep(2)
 
@@ -124,18 +125,59 @@ class GameRandom(Deck):
         print(f"\nComputer had {pc1} and {pc2}")
         time.sleep(2)
 
+        if wclass == 'r':
+            classgamerandom = GameRandom()
+            result_comp = classgamerandom.comp_random_play(result_player, result_comp, possible, possiblec, pc1, pc2, bet, c1, c2, money)
+        
+        elif wclass == 'd':
+            classgamedif = GameDif()
+            result_comp = classgamedif.round_dif(result_player, result_comp, possible, possiblec, pc1, pc2, bet, c1, c2, money)
+
+        if result_comp == result_player:
+            print(f"\nIt was a draw {result_comp} to {result_player}")
+            money -= bet
+
+        if result_comp > result_player:
+            print(f"\nThe computer won {result_comp} to {result_player} ")
+            money -= bet
+
+        if result_comp < result_player:
+            print(f"\nYou won {result_player} to {result_comp} ")
+            money += bet
+
+        self.start_play('r', money)
+
+class GameRandom(Deck):
+
+    money = 5000
+
+    def comp_random_play(self, result_player, result_comp, possible, possiblec, pc1, pc2, bet, c1, c2, money):
+        
+        have_Acomp = 0
+        if c1 == 'A':
+            have_Acomp += 1
+        if c2 == 'A':
+            have_Acomp += 1
+
         while possiblec is True:
-            if result_comp > 21:
+
+            if result_comp > 21 and have_Acomp > 0:
+                result_comp -= 10
+                have_Acomp -= 1
+
+            if result_comp > 21 and have_Acomp == 0:
                 print(f'You win! {result_comp} to {result_player}')
-                self.money += bet
-                super().start_play('r', self.money)
+                money += bet
+                super().start_play('r', money)
             elif result_comp == 21:
                 print('Blackjack, comp win')
-                self.money = (self.money - bet) - (bet/2)
-                super().start_play('r', self.money)
+                money = (money - bet) - (bet/2)
+                super().start_play('r', money)
 
             if result_comp < 17:
                 tmp = super().get_one_card()
+                if tmp  == 'A':
+                    have_Acomp += 1
                 print(f"\nComputer took {tmp}")
                 time.sleep(2)
                 result_comp = super().add_cards(result_comp, tmp)
@@ -145,19 +187,7 @@ class GameRandom(Deck):
                 time.sleep(2)
                 possiblec = False
 
-        if result_comp == result_player:
-            print(f"\nIt was a draw {result_comp} to {result_player}")
-            self.money -= bet
-
-        if result_comp > result_player:
-            print(f"\nThe computer won {result_comp} to {result_player} ")
-            self.money -= bet
-
-        if result_comp < result_player:
-            print(f"\nYou won {result_player} to {result_comp} ")
-            self.money += bet
-
-        super().start_play('r', self.money)
+        return result_comp
 
     def main_random(self):
         super().start_play('r', self.money)
@@ -166,18 +196,64 @@ class GameDif(Deck):
 
     money = 1000
 
-    def round(self):
-        print('correcte')
+    def comp_takes(self, result_player, result_comp):
+        if result_player == result_comp:
+            return False
+        if result_player > result_comp:
+            return True
+        if result_player < result_comp:
+            return False
+
+    def round_dif(self, result_player, result_comp, possible, possiblec, pc1, pc2, bet, c1, c2, money):
+
+        have_Acomp = 0
+        if c1 == 'A':
+            have_Acomp += 1
+        if c2 == 'A':
+            have_Acomp += 1
+
+        while possiblec is True:
+
+            if result_comp > 21 and have_Acomp > 0:
+                result_comp -= 10
+                have_Acomp -= 1
+
+            if result_comp > 21 and have_Acomp == 0:
+                print(f'You win! {result_comp} to {result_player}')
+                money += bet
+                super().start_play('r', money)
+            elif result_comp == 21:
+                print('Blackjack, comp win')
+                money = (money - bet) - (bet/2)
+                super().start_play('r', money)
+            
+            hitstand = self.comp_takes(result_player, result_comp)
+
+            if hitstand is True:
+                tmp = super().get_one_card()
+                if tmp  == 'A':
+                    have_Acomp += 1
+                print(f"\nComputer took {tmp}")
+                time.sleep(2)
+                result_comp = super().add_cards(result_comp, tmp)
+
+            elif hitstand is False:
+                print('\nThe computer does not take a card')
+                time.sleep(2)
+                possiblec = False
+
+        return result_comp
 
     def play_dif(self):
         super().start_play('d', self.money)
 
-class GameImp(Deck):
+
+class GameDeal(Deck):
     pass
 
 def main():
     print("LET'S PLAY BLACKJACK")
-    version_selected = str(input('Do you wanna play the random version (r), the dificult (d) or impossible (i) '))
+    version_selected = str(input('Do you wanna play the random version (r), the dificult (d) or to be the dealer (de) '))
     number_decks = int(input('How many decks do you wanna play with? ' ))
     classdeck = Deck()
 
