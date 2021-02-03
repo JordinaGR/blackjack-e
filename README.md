@@ -7,7 +7,7 @@ The second the computer will play a bit better.
 The third the player is the dealer and the computer will use basic strategy and card counting to set the bets.
 
 
-# Català
+### Català
 ____________________________________________________________________________________________________________________
 Amb aquest blackjack creat amb OOP pots jugar amb tres modalitats de joc.
 
